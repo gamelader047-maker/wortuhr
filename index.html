@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wortuhr – ET-BP 2026 · AU2024a</title>
+<meta name="description" content="Eine selbst gebaute Wortuhr mit 110 LEDs, Arduino, Echtzeituhr, IR-Fernbedienung und Lichtsensor. ET-BP-Projekt der Klasse AU2024a.">
+<meta name="theme-color" content="#0b0b0d">
+<style>
+  :root{
+    --bg:#0b0b0d; --panel:#141417; --line:#26262b; --text:#e9e7e2; --muted:#8d8b86;
+    --glow:#ffd27a; --glow-soft:rgba(255,210,122,.35); --off:#2a2a2f;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  a{color:var(--glow)}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+  /* ---------- Hero ---------- */
+  header{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+         padding:48px 20px 32px;text-align:center;gap:28px}
+  .kicker{letter-spacing:.32em;font-size:.72rem;color:var(--muted);text-transform:uppercase}
+  .clock{background:#050506;border:1px solid var(--line);border-radius:14px;padding:clamp(16px,4vw,32px);
+         box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1px #000;
+         width:min(92vw,520px)}
+  .grid{display:grid;grid-template-columns:repeat(11,1fr);gap:clamp(2px,.8vw,6px);
+        font:600 clamp(15px,4.6vw,30px)/1 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  .grid span{aspect-ratio:1;display:grid;place-items:center;color:var(--off);transition:color .6s,text-shadow .6s}
+  .grid span.on{color:var(--glow);text-shadow:0 0 6px var(--glow-soft),0 0 18px var(--glow-soft)}
+  h1{margin:0;font-size:clamp(2.2rem,8vw,4rem);letter-spacing:-.02em;line-height:1}
+  .tag{margin:0;color:var(--muted)}
+  .joke{display:inline-block;margin-top:4px;padding:6px 12px;border:1px dashed var(--line);border-radius:999px;
+        font-size:.85rem;color:var(--muted)}
+  .scroll{font-size:.8rem;color:var(--muted);text-decoration:none}
+
+  /* ---------- Sections ---------- */
+  section{padding:56px 0;border-top:1px solid var(--line)}
+  h2{font-size:1.5rem;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 28px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .card h3{margin:0 0 6px;font-size:1rem}
+  .card p{margin:0;color:var(--muted);font-size:.93rem}
+  .num{font:700 1.6rem/1 ui-monospace,Menlo,monospace;color:var(--glow)}
+  figure{margin:0;background:#f4f3f0;border-radius:12px;overflow:hidden}
+  figure img{display:block;width:100%;height:auto}
+  figcaption{background:var(--panel);color:var(--muted);font-size:.85rem;padding:10px 14px}
+  table{width:100%;border-collapse:collapse;font-size:.93rem}
+  td,th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:500}
+  td.r{text-align:right;font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+  ul.clean{margin:0;padding-left:1.1em;color:var(--muted)} ul.clean li{margin:4px 0}
+  .team{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  .avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+          background:#1f1f24;border:1px solid var(--line);font-weight:700;color:var(--glow);margin-bottom:10px}
+  footer{padding:36px 0 56px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="kicker">ET-BP 2026 · Klasse AU2024a</div>
+  <div class="clock" aria-label="Live-Wortuhr">
+    <div class="grid" id="grid"></div>
+  </div>
+  <div>
+    <h1>Wortuhr</h1>
+    <p class="tag">Die Uhr, die die Zeit in Worten zeigt.</p>
+    <span class="joke" id="joke">ES IST ZEIT FÜR EINE 6 :)</span>
+  </div>
+  <a class="scroll" href="#projekt">↓ Mehr zum Projekt</a>
+</header>
+
+<main class="wrap">
+
+  <section id="projekt">
+    <h2>Das Projekt</h2>
+    <p class="sub">Die Uhr oben läuft live und zeigt die aktuelle Zeit. Unsere echte Uhr zeigt die Zeit genauso: mit 110 LEDs hinter einer Front aus Buchstaben.</p>
+    <div class="cards">
+      <div class="card"><div class="num">110</div><h3>LEDs</h3><p>WS2812B, einzeln ansteuerbar, 10 Reihen × 11 Buchstaben.</p></div>
+      <div class="card"><div class="num">5 min</div><h3>Auflösung</h3><p>Die Uhr zeigt die Zeit in 5-Minuten-Schritten, wie man sie spricht.</p></div>
+      <div class="card"><div class="num">3</div><h3>Druckteile</h3><p>Front, Lochplatte und Rückwand, konstruiert in Blender und gedruckt in PLA.</p></div>
+      <div class="card"><div class="num">3</div><h3>Sprints</h3><p>Geplant und umgesetzt mit Scrum, mit 3 Reviews.</p></div>
+    </div>
+  </section>
+
+  <section id="aufbau">
+    <h2>Aufbau</h2>
+    <p class="sub">Die Explosionszeichnung zeigt alle Teile. Sie stammt direkt aus unserem 3D-Modell.</p>
+    <figure>
+      <img src="explosion.jpg" alt="Explosionszeichnung der Wortuhr: Front mit Rahmen, Lochplatte, LED-Platte, Hauptplatine, RTC-Modul und Rückwand" loading="lazy" width="1500" height="1291">
+      <figcaption>T1 Front mit Rahmen · T2 Lochplatte · LED-Platte · Hauptplatine · RTC-Modul · T3 Rückwand</figcaption>
+    </figure>
+  </section>
+
+  <section id="technik">
+    <h2>Technik</h2>
+    <p class="sub">Diese Bauteile stecken in der Uhr.</p>
+    <div class="cards">
+      <div class="card"><h3>Mikrocontroller</h3><p>Ein Arduino steuert alle LEDs und liest die Sensoren. Die Software entwickeln wir in VS Code mit PlatformIO und testen sie in der Simulation Wokwi.</p></div>
+      <div class="card"><h3>Echtzeituhr (RTC)</h3><p>Das Modul DS1307 zählt die Zeit weiter, auch ohne Strom. Eine Knopfzelle versorgt es.</p></div>
+      <div class="card"><h3>IR-Fernbedienung</h3><p>Mit einer Fernbedienung stellen wir die Zeit, die Farbe und die Helligkeit ein.</p></div>
+      <div class="card"><h3>Lichtsensor (LDR)</h3><p>Der Sensor misst das Umgebungslicht. Die Uhr dimmt die LEDs automatisch, wenn es dunkel wird.</p></div>
+      <div class="card"><h3>Eigene Platine</h3><p>Das Schema und die Leiterplatte haben wir in KiCad entworfen und fertigen lassen.</p></div>
+      <div class="card"><h3>Speisung</h3><p>Ein 5-V-Netzteil speist die Uhr über eine Hohlstecker-Buchse.</p></div>
+    </div>
+  </section>
+
+  <section id="konstruktion">
+    <h2>Konstruktion</h2>
+    <p class="sub">Wir haben das Gehäuse für den 3D-Druck geplant. Diese Details machen den Unterschied.</p>
+    <div class="cards">
+      <div class="card"><h3>Lichtkammern</h3><p>Jede LED sitzt in einer eigenen, dichten Kammer. Kein Licht geht in die Nachbarbuchstaben. Die Trennwände sitzen genau auf den Schnittkanten vom LED-Streifen.</p></div>
+      <div class="card"><h3>Diffusor-Folie</h3><p>Eine Folie liegt in einer 0,3 mm tiefen Tasche hinter der Front. Sie verteilt das Licht gleichmässig über jeden Buchstaben.</p></div>
+      <div class="card"><h3>Ohne Stützmaterial</h3><p>Alle Teile drucken ohne Support. Das Loch für die Buchse wird klein vorgedruckt und danach sauber aufgebohrt.</p></div>
+      <div class="card"><h3>Einschmelzmuttern</h3><p>Alle Gewinde sind Messing-Einschmelzmuttern. Die Uhr lässt sich beliebig oft öffnen und schliessen.</p></div>
+      <div class="card"><h3>Wandmontage</h3><p>Zwei Schlüssellöcher halten die Uhr an der Wand. Das Kabel führt unten aus dem Gehäuse.</p></div>
+      <div class="card"><h3>Dieser QR-Code</h3><p>Du hast ihn gescannt: Er ist direkt in die Rückwand gedruckt.</p></div>
+    </div>
+  </section>
+
+  <section id="leistung">
+    <h2>Leistungsberechnung</h2>
+    <p class="sub">Wie viel Strom braucht die Uhr?</p>
+    <table>
+      <tr><th>Fall</th><th>Rechnung</th><td class="r"><strong>Strom</strong></td></tr>
+      <tr><td>1 LED, voll weiss</td><td>3 Farben × 20 mA</td><td class="r">60 mA</td></tr>
+      <tr><td>Alle 110 LEDs, voll weiss</td><td>110 × 60 mA</td><td class="r">6,6 A</td></tr>
+      <tr><td>Normalbetrieb (ca. 20 Buchstaben)</td><td>20 × 60 mA</td><td class="r">1,2 A</td></tr>
+      <tr><td>Netzteil 15 W bei 5 V</td><td>15 W ÷ 5 V</td><td class="r">3,0 A</td></tr>
+    </table>
+    <p class="sub" style="margin-top:18px">Der Normalbetrieb liegt weit unter der Grenze vom Netzteil. Zur Sicherheit begrenzt die Software den Strom auf 2,5 A. So bleibt das Netzteil auch bei einem Fehler im Code geschützt.</p>
+  </section>
+
+  <section id="team">
+    <h2>Team</h2>
+    <p class="sub">Klasse AU2024a · ET-BP 2026</p>
+    <div class="team">
+      <div class="card"><div class="avatar">J</div><h3>Jonas</h3><p>IR-Steuerung, LED-Matrix, 3D-Modelle</p></div>
+      <div class="card"><div class="avatar">L</div><h3>Lukas</h3><p>Elektroschema und Leiterplatte, LED-Steuerung, 3D-Modelle</p></div>
+      <div class="card"><div class="avatar">N</div><h3>Nils</h3><p>Breadboard, LDR-Steuerung, Materialbestellung, LED-Matrix</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Wortuhr · ET-BP 2026 · AU2024a<br>
+  <span id="now"></span>
+</footer>
+
+<script>
+// Buchstabenraster wie auf der Front (10 Reihen x 11 Spalten)
+const ROWS = [
+  "ESKISTAFÜNF",
+  "ZEHNZWANZIG",
+  "DREIVIERTEL",
+  "VORTBJPNACH",
+  "HALBQUEZEHN",
+  "GTZWÖLFDREI",
+  "NEUNVIERELF",
+  "FÜNFOACHTRS",
+  "ZWEINSIEBEN",
+  "SECHSFMPUHR"
+];
+// Wörter: [Reihe, Startspalte, Länge]
+const W = {
+  ES:[0,0,2], IST:[0,3,3], M_FUENF:[0,7,4],
+  M_ZEHN:[1,0,4], ZWANZIG:[1,4,7],
+  DREIVIERTEL:[2,0,11], VIERTEL:[2,4,7],
+  VOR:[3,0,3], NACH:[3,7,4],
+  HALB:[4,0,4], H_ZEHN:[4,7,4],
+  ZWOELF:[5,2,5], DREI:[5,7,4],
+  NEUN:[6,0,4], VIER:[6,4,4], ELF:[6,8,3],
+  FUENF:[7,0,4], ACHT:[7,5,4],
+  ZWEI:[8,0,4], EIN:[8,2,3], EINS:[8,2,4], SIEBEN:[8,5,6],
+  SECHS:[9,0,5], UHR:[9,8,3]
+};
+const HOURS = ["ZWOELF","EINS","ZWEI","DREI","VIER","FUENF","SECHS","SIEBEN","ACHT","NEUN","H_ZEHN","ELF"];
+
+const grid = document.getElementById("grid");
+const cells = [];
+ROWS.forEach(r => [...r].forEach(ch => {
+  const s = document.createElement("span"); s.textContent = ch; grid.appendChild(s); cells.push(s);
+}));
+
+function words(d){
+  const m = Math.floor(d.getMinutes()/5);
+  let h = d.getHours() % 12;
+  const list = ["ES","IST"];
+  const next = () => (h+1) % 12;
+  switch(m){
+    case 0:  list.push(h===1 ? "EIN" : HOURS[h], "UHR"); return list;
+    case 1:  list.push("M_FUENF","NACH"); break;
+    case 2:  list.push("M_ZEHN","NACH"); break;
+    case 3:  list.push("VIERTEL","NACH"); break;
+    case 4:  list.push("ZWANZIG","NACH"); break;
+    case 5:  list.push("M_FUENF","VOR","HALB"); h=next(); break;
+    case 6:  list.push("HALB"); h=next(); break;
+    case 7:  list.push("M_FUENF","NACH","HALB"); h=next(); break;
+    case 8:  list.push("ZWANZIG","VOR"); h=next(); break;
+    case 9:  list.push("VIERTEL","VOR"); h=next(); break;
+    case 10: list.push("M_ZEHN","VOR"); h=next(); break;
+    case 11: list.push("M_FUENF","VOR"); h=next(); break;
+  }
+  list.push(HOURS[h]);
+  return list;
+}
+
+function render(){
+  const d = new Date();
+  const on = new Set();
+  words(d).forEach(k => { const [r,c,l] = W[k]; for(let i=0;i<l;i++) on.add(r*11+c+i); });
+  cells.forEach((s,i) => s.classList.toggle("on", on.has(i)));
+  document.getElementById("now").textContent =
+    "Aktuelle Zeit: " + d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"});
+}
+render();
+setInterval(render, 10000);
+</script>
+</body>
+</html>
