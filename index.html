@@ -21,18 +21,26 @@
 
   /* ---------- Hero ---------- */
   header{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-         padding:48px 20px 32px;text-align:center;gap:28px}
+         padding:48px 20px 32px;text-align:center;gap:24px}
   .kicker{letter-spacing:.32em;font-size:.72rem;color:var(--muted);text-transform:uppercase}
   .clock{background:#050506;border:1px solid var(--line);border-radius:14px;padding:clamp(16px,4vw,32px);
-         box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1px #000;
-         width:min(92vw,520px)}
+         box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1px #000;width:min(92vw,520px)}
   .grid{display:grid;grid-template-columns:repeat(11,1fr);gap:clamp(2px,.8vw,6px);
         font:600 clamp(15px,4.6vw,30px)/1 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
   .grid span{aspect-ratio:1;display:grid;place-items:center;color:var(--off);transition:color .6s,text-shadow .6s}
   .grid span.on{color:var(--glow);text-shadow:0 0 6px var(--glow-soft),0 0 18px var(--glow-soft)}
+
+  .timebar{width:min(92vw,520px);display:flex;align-items:center;gap:12px}
+  .timebar input[type=range]{flex:1;accent-color:var(--glow)}
+  .timebar output{font:600 .95rem ui-monospace,Menlo,monospace;min-width:3.4em;text-align:right}
+  .btn{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:999px;
+       padding:6px 14px;font:inherit;font-size:.85rem;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:var(--muted)}
+  .btn.active{border-color:var(--glow);color:var(--glow)}
+
   h1{margin:0;font-size:clamp(2.2rem,8vw,4rem);letter-spacing:-.02em;line-height:1}
-  .tag{margin:0;color:var(--muted)}
-  .joke{display:inline-block;margin-top:4px;padding:6px 12px;border:1px dashed var(--line);border-radius:999px;
+  .tag{margin:6px 0 0;color:var(--muted)}
+  .joke{display:inline-block;margin-top:10px;padding:6px 12px;border:1px dashed var(--line);border-radius:999px;
         font-size:.85rem;color:var(--muted)}
   .scroll{font-size:.8rem;color:var(--muted);text-decoration:none}
 
@@ -45,17 +53,21 @@
   .card h3{margin:0 0 6px;font-size:1rem}
   .card p{margin:0;color:var(--muted);font-size:.93rem}
   .num{font:700 1.6rem/1 ui-monospace,Menlo,monospace;color:var(--glow)}
+
+  .viewer{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+          background:radial-gradient(120% 90% at 50% 30%,#2a2a31 0%,#151519 60%,#0e0e11 100%);
+          aspect-ratio:4/3;max-height:78vh;width:100%}
+  .viewer canvas{display:block;width:100%;height:100%;touch-action:none}
+  .viewer .ui{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .viewer .ui .btn{background:rgba(11,11,13,.7);backdrop-filter:blur(6px)}
+  .viewer .hint{position:absolute;top:10px;left:0;right:0;text-align:center;font-size:.78rem;color:var(--muted);pointer-events:none}
+  .viewer .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:.9rem}
   figure{margin:0;background:#f4f3f0;border-radius:12px;overflow:hidden}
   figure img{display:block;width:100%;height:auto}
   figcaption{background:var(--panel);color:var(--muted);font-size:.85rem;padding:10px 14px}
-  table{width:100%;border-collapse:collapse;font-size:.93rem}
-  td,th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-  th{color:var(--muted);font-weight:500}
-  td.r{text-align:right;font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
-  ul.clean{margin:0;padding-left:1.1em;color:var(--muted)} ul.clean li{margin:4px 0}
-  .team{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
-  .avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
-          background:#1f1f24;border:1px solid var(--line);font-weight:700;color:var(--glow);margin-bottom:10px}
+  details{margin-top:14px}
+  summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+  details figure{margin-top:12px}
   footer{padding:36px 0 56px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;text-align:center}
 </style>
 </head>
@@ -63,13 +75,18 @@
 
 <header>
   <div class="kicker">ET-BP 2026 · Klasse AU2024a</div>
-  <div class="clock" aria-label="Live-Wortuhr">
+  <div class="clock" aria-label="Wortuhr">
     <div class="grid" id="grid"></div>
+  </div>
+  <div class="timebar">
+    <button class="btn active" id="liveBtn" type="button">Live</button>
+    <input type="range" id="slider" min="0" max="287" step="1" aria-label="Uhrzeit wählen">
+    <output id="timeOut">--:--</output>
   </div>
   <div>
     <h1>Wortuhr</h1>
     <p class="tag">Die Uhr, die die Zeit in Worten zeigt.</p>
-    <span class="joke" id="joke">ES IST ZEIT FÜR EINE 6 :)</span>
+    <span class="joke">ES IST ZEIT FÜR EINE 6 :)</span>
   </div>
   <a class="scroll" href="#projekt">↓ Mehr zum Projekt</a>
 </header>
@@ -78,7 +95,7 @@
 
   <section id="projekt">
     <h2>Das Projekt</h2>
-    <p class="sub">Die Uhr oben läuft live und zeigt die aktuelle Zeit. Unsere echte Uhr zeigt die Zeit genauso: mit 110 LEDs hinter einer Front aus Buchstaben.</p>
+    <p class="sub">Die Uhr oben läuft live. Mit dem Regler zeigst du jede beliebige Uhrzeit. Unsere echte Uhr zeigt die Zeit genauso: mit 110 LEDs hinter einer Front aus Buchstaben.</p>
     <div class="cards">
       <div class="card"><div class="num">110</div><h3>LEDs</h3><p>WS2812B, einzeln ansteuerbar, 10 Reihen × 11 Buchstaben.</p></div>
       <div class="card"><div class="num">5 min</div><h3>Auflösung</h3><p>Die Uhr zeigt die Zeit in 5-Minuten-Schritten, wie man sie spricht.</p></div>
@@ -87,13 +104,25 @@
     </div>
   </section>
 
-  <section id="aufbau">
-    <h2>Aufbau</h2>
-    <p class="sub">Die Explosionszeichnung zeigt alle Teile. Sie stammt direkt aus unserem 3D-Modell.</p>
-    <figure>
-      <img src="explosion.jpg" alt="Explosionszeichnung der Wortuhr: Front mit Rahmen, Lochplatte, LED-Platte, Hauptplatine, RTC-Modul und Rückwand" loading="lazy" width="1500" height="1291">
-      <figcaption>T1 Front mit Rahmen · T2 Lochplatte · LED-Platte · Hauptplatine · RTC-Modul · T3 Rückwand</figcaption>
-    </figure>
+  <section id="modell">
+    <h2>3D-Modell</h2>
+    <p class="sub">Das ist unser echtes Konstruktionsmodell. Dreh es mit dem Finger oder der Maus. Die Diffusor-Folie leuchtet mit derselben Zeit wie die Uhr oben.</p>
+    <div class="viewer" id="viewer">
+      <div class="loading" id="loading">Modell wird geladen …</div>
+      <div class="hint">Ziehen = drehen · Zwei Finger / Mausrad = zoomen</div>
+      <div class="ui">
+        <button class="btn" id="explodeBtn" type="button">Explodieren</button>
+        <button class="btn" id="viewFront" type="button">Front</button>
+        <button class="btn" id="viewBack" type="button">Rückseite</button>
+      </div>
+    </div>
+    <details>
+      <summary>Explosionszeichnung als Bild anzeigen</summary>
+      <figure>
+        <img src="explosion.jpg" alt="Explosionszeichnung der Wortuhr: Front mit Rahmen, Lochplatte, LED-Platte, Hauptplatine, RTC-Modul und Rückwand" loading="lazy" width="1500" height="1291">
+        <figcaption>T1 Front mit Rahmen · T2 Lochplatte · LED-Platte · Hauptplatine · RTC-Modul · T3 Rückwand</figcaption>
+      </figure>
+    </details>
   </section>
 
   <section id="technik">
@@ -122,104 +151,202 @@
     </div>
   </section>
 
-  <section id="leistung">
-    <h2>Leistungsberechnung</h2>
-    <p class="sub">Wie viel Strom braucht die Uhr?</p>
-    <table>
-      <tr><th>Fall</th><th>Rechnung</th><td class="r"><strong>Strom</strong></td></tr>
-      <tr><td>1 LED, voll weiss</td><td>3 Farben × 20 mA</td><td class="r">60 mA</td></tr>
-      <tr><td>Alle 110 LEDs, voll weiss</td><td>110 × 60 mA</td><td class="r">6,6 A</td></tr>
-      <tr><td>Normalbetrieb (ca. 20 Buchstaben)</td><td>20 × 60 mA</td><td class="r">1,2 A</td></tr>
-      <tr><td>Netzteil 15 W bei 5 V</td><td>15 W ÷ 5 V</td><td class="r">3,0 A</td></tr>
-    </table>
-    <p class="sub" style="margin-top:18px">Der Normalbetrieb liegt weit unter der Grenze vom Netzteil. Zur Sicherheit begrenzt die Software den Strom auf 2,5 A. So bleibt das Netzteil auch bei einem Fehler im Code geschützt.</p>
-  </section>
-
-  <section id="team">
-    <h2>Team</h2>
-    <p class="sub">Klasse AU2024a · ET-BP 2026</p>
-    <div class="team">
-      <div class="card"><div class="avatar">J</div><h3>Jonas</h3><p>IR-Steuerung, LED-Matrix, 3D-Modelle</p></div>
-      <div class="card"><div class="avatar">L</div><h3>Lukas</h3><p>Elektroschema und Leiterplatte, LED-Steuerung, 3D-Modelle</p></div>
-      <div class="card"><div class="avatar">N</div><h3>Nils</h3><p>Breadboard, LDR-Steuerung, Materialbestellung, LED-Matrix</p></div>
-    </div>
-  </section>
-
 </main>
 
-<footer>
-  Wortuhr · ET-BP 2026 · AU2024a<br>
-  <span id="now"></span>
-</footer>
+<footer>Wortuhr · ET-BP 2026 · AU2024a</footer>
 
-<script>
+<script type="importmap">
+{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+/* ================= Wortuhr-Logik ================= */
 // Buchstabenraster wie auf der Front (10 Reihen x 11 Spalten)
-const ROWS = [
-  "ESKISTAFÜNF",
-  "ZEHNZWANZIG",
-  "DREIVIERTEL",
-  "VORTBJPNACH",
-  "HALBQUEZEHN",
-  "GTZWÖLFDREI",
-  "NEUNVIERELF",
-  "FÜNFOACHTRS",
-  "ZWEINSIEBEN",
-  "SECHSFMPUHR"
-];
+const ROWS = ["ESKISTAFÜNF","ZEHNZWANZIG","DREIVIERTEL","VORTBJPNACH","HALBQUEZEHN",
+              "GTZWÖLFDREI","NEUNVIERELF","FÜNFOACHTRS","ZWEINSIEBEN","SECHSFMPUHR"];
 // Wörter: [Reihe, Startspalte, Länge]
-const W = {
-  ES:[0,0,2], IST:[0,3,3], M_FUENF:[0,7,4],
-  M_ZEHN:[1,0,4], ZWANZIG:[1,4,7],
-  DREIVIERTEL:[2,0,11], VIERTEL:[2,4,7],
-  VOR:[3,0,3], NACH:[3,7,4],
-  HALB:[4,0,4], H_ZEHN:[4,7,4],
-  ZWOELF:[5,2,5], DREI:[5,7,4],
-  NEUN:[6,0,4], VIER:[6,4,4], ELF:[6,8,3],
-  FUENF:[7,0,4], ACHT:[7,5,4],
-  ZWEI:[8,0,4], EIN:[8,2,3], EINS:[8,2,4], SIEBEN:[8,5,6],
-  SECHS:[9,0,5], UHR:[9,8,3]
-};
+const W = { ES:[0,0,2], IST:[0,3,3], M_FUENF:[0,7,4], M_ZEHN:[1,0,4], ZWANZIG:[1,4,7],
+  VIERTEL:[2,4,7], VOR:[3,0,3], NACH:[3,7,4], HALB:[4,0,4], H_ZEHN:[4,7,4],
+  ZWOELF:[5,2,5], DREI:[5,7,4], NEUN:[6,0,4], VIER:[6,4,4], ELF:[6,8,3],
+  FUENF:[7,0,4], ACHT:[7,5,4], ZWEI:[8,0,4], EIN:[8,2,3], EINS:[8,2,4], SIEBEN:[8,5,6],
+  SECHS:[9,0,5], UHR:[9,8,3] };
 const HOURS = ["ZWOELF","EINS","ZWEI","DREI","VIER","FUENF","SECHS","SIEBEN","ACHT","NEUN","H_ZEHN","ELF"];
 
+function words(hh, mm){
+  const m = Math.floor(mm/5); let h = hh % 12; const L = ["ES","IST"]; const nx = () => (h+1)%12;
+  switch(m){
+    case 0:  L.push(h===1 ? "EIN" : HOURS[h], "UHR"); return L;
+    case 1:  L.push("M_FUENF","NACH"); break;
+    case 2:  L.push("M_ZEHN","NACH"); break;
+    case 3:  L.push("VIERTEL","NACH"); break;
+    case 4:  L.push("ZWANZIG","NACH"); break;
+    case 5:  L.push("M_FUENF","VOR","HALB"); h=nx(); break;
+    case 6:  L.push("HALB"); h=nx(); break;
+    case 7:  L.push("M_FUENF","NACH","HALB"); h=nx(); break;
+    case 8:  L.push("ZWANZIG","VOR"); h=nx(); break;
+    case 9:  L.push("VIERTEL","VOR"); h=nx(); break;
+    case 10: L.push("M_ZEHN","VOR"); h=nx(); break;
+    case 11: L.push("M_FUENF","VOR"); h=nx(); break;
+  }
+  L.push(HOURS[h]); return L;
+}
+function litCells(hh, mm){
+  const on = new Set();
+  words(hh, mm).forEach(k => { const [r,c,l] = W[k]; for (let i=0;i<l;i++) on.add(r*11+c+i); });
+  return on;
+}
+
+/* ================= 2D-Uhr + Regler ================= */
 const grid = document.getElementById("grid");
 const cells = [];
-ROWS.forEach(r => [...r].forEach(ch => {
-  const s = document.createElement("span"); s.textContent = ch; grid.appendChild(s); cells.push(s);
-}));
+ROWS.forEach(r => [...r].forEach(ch => { const s=document.createElement("span"); s.textContent=ch; grid.appendChild(s); cells.push(s); }));
 
-function words(d){
-  const m = Math.floor(d.getMinutes()/5);
-  let h = d.getHours() % 12;
-  const list = ["ES","IST"];
-  const next = () => (h+1) % 12;
-  switch(m){
-    case 0:  list.push(h===1 ? "EIN" : HOURS[h], "UHR"); return list;
-    case 1:  list.push("M_FUENF","NACH"); break;
-    case 2:  list.push("M_ZEHN","NACH"); break;
-    case 3:  list.push("VIERTEL","NACH"); break;
-    case 4:  list.push("ZWANZIG","NACH"); break;
-    case 5:  list.push("M_FUENF","VOR","HALB"); h=next(); break;
-    case 6:  list.push("HALB"); h=next(); break;
-    case 7:  list.push("M_FUENF","NACH","HALB"); h=next(); break;
-    case 8:  list.push("ZWANZIG","VOR"); h=next(); break;
-    case 9:  list.push("VIERTEL","VOR"); h=next(); break;
-    case 10: list.push("M_ZEHN","VOR"); h=next(); break;
-    case 11: list.push("M_FUENF","VOR"); h=next(); break;
+const slider = document.getElementById("slider"), out = document.getElementById("timeOut"), liveBtn = document.getElementById("liveBtn");
+let live = true, manual = 0;
+const pad = n => String(n).padStart(2,"0");
+function currentTime(){
+  if (live){ const d=new Date(); return [d.getHours(), d.getMinutes()]; }
+  return [Math.floor(manual/12), (manual%12)*5];
+}
+let lit = new Set();
+function update(){
+  const [h,m] = currentTime();
+  lit = litCells(h,m);
+  cells.forEach((s,i) => s.classList.toggle("on", lit.has(i)));
+  out.textContent = pad(h)+":"+pad(m);
+  if (live) slider.value = h*12 + Math.floor(m/5);
+  updateFoil();
+}
+slider.addEventListener("input", () => { live=false; manual=+slider.value; liveBtn.classList.remove("active"); update(); });
+liveBtn.addEventListener("click", () => { live=true; liveBtn.classList.add("active"); update(); });
+setInterval(() => { if (live) update(); }, 10000);
+
+/* ================= 3D-Modell ================= */
+const viewer = document.getElementById("viewer");
+let foilMats = null;
+function updateFoil(){
+  if (!foilMats) return;
+  foilMats.forEach((m,i) => {
+    const on = lit.has(i);
+    m.color.set(on ? 0xffd890 : 0x26262b);
+    m.emissive.set(on ? 0xffa531 : 0x000000);
+    m.emissiveIntensity = on ? 1.6 : 0;
+  });
+}
+
+function init3D(){
+  const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  viewer.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 4/3, 5, 5000);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.enablePan = false;
+  controls.minDistance = 220; controls.maxDistance = 1600;
+  controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
+  controls.addEventListener("start", () => controls.autoRotate = false);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x30303a, 1.6));
+  const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(300, 500, 600); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xbfd4ff, 1.4); rim.position.set(-500, 200, -400); scene.add(rim);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(-300, -300, 400); scene.add(fill);
+
+  // Gruppe: Blender-Z (Tiefe der Uhr) zeigt danach zum Betrachter
+  const root = new THREE.Group(); root.rotation.x = Math.PI/2; scene.add(root);
+
+  // Explosions-Abstände in mm entlang der Uhr-Tiefe (glTF-Y)
+  const EX = { Buchstabenplatte_web:240, Lochplatte_web:130, LED_Platte_web:60, LED_Streifen_web:60, LEDs_aktiv_web:60,
+               PCB_Platine_web:-20, RTC_Modul_web:-20, Rueckwand_web:-95, foil:185 };
+  const parts = [];
+
+  // Diffusor-Folie: 110 Felder hinter den Buchstaben (Blender z = 22.15)
+  const foil = new THREE.Group(); foil.name = "foil";
+  foilMats = [];
+  const geo = new THREE.PlaneGeometry(15.4, 15.4);
+  for (let r=0;r<10;r++) for (let c=0;c<11;c++){
+    const mat = new THREE.MeshStandardMaterial({ color:0x26262b, roughness:0.9, side:THREE.DoubleSide });
+    const p = new THREE.Mesh(geo, mat);
+    const bx = -83.333 + c*16.6667, by = 75 - r*16.6667;
+    p.position.set(bx, 22.15, -by); p.rotation.x = -Math.PI/2;
+    foil.add(p); foilMats.push(mat);
   }
-  list.push(HOURS[h]);
-  return list;
+  root.add(foil); parts.push({ obj:foil, base:foil.position.y, dy:EX.foil });
+  updateFoil();
+
+  const draco = new DRACOLoader(); draco.setDecoderPath("./lib/draco/");
+  const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+  loader.load("wortuhr.glb", (g) => {
+    const model = g.scene;
+    model.traverse(o => {
+      if (o.isMesh){
+        o.material.side = THREE.DoubleSide;
+        if (o.name.startsWith("LEDs_aktiv")) { o.material.emissive = new THREE.Color(0xffc96a); o.material.emissiveIntensity = 1.2; }
+      }
+    });
+    [...model.children].forEach(o => { root.add(o); if (EX[o.name] !== undefined) parts.push({ obj:o, base:o.position.y, dy:EX[o.name] }); });
+    document.getElementById("loading").remove();
+  }, undefined, () => { document.getElementById("loading").textContent = "Das 3D-Modell konnte nicht geladen werden."; });
+
+  // Kamera-Ansichten
+  const target = new THREE.Vector3(0, 0, 0);
+  let fly = null;
+  function flyTo(dir, dist){ fly = { from: camera.position.clone(), to: dir.clone().normalize().multiplyScalar(dist), k: 0 }; }
+  function setView(dir, dist){ camera.position.copy(dir.clone().normalize().multiplyScalar(dist)); controls.target.copy(target); controls.update(); }
+  const FRONT = new THREE.Vector3(0.55, 0.32, 1), BACK = new THREE.Vector3(-0.45, 0.25, -1), SIDE = new THREE.Vector3(1, 0.42, 0.42);
+  setView(FRONT, 560);
+
+  let t = 0, goal = 0;
+  const explodeBtn = document.getElementById("explodeBtn");
+  explodeBtn.addEventListener("click", () => {
+    goal = goal ? 0 : 1;
+    explodeBtn.textContent = goal ? "Zusammenbauen" : "Explodieren";
+    explodeBtn.classList.toggle("active", !!goal);
+    controls.autoRotate = false;
+    flyTo(goal ? SIDE : FRONT, goal ? 900 : 560);
+  });
+  document.getElementById("viewFront").addEventListener("click", () => { controls.autoRotate=false; flyTo(FRONT, goal ? 900 : 560); });
+  document.getElementById("viewBack").addEventListener("click", () => { controls.autoRotate=false; flyTo(BACK, goal ? 900 : 560); });
+
+  function resize(){
+    const w = viewer.clientWidth, h = viewer.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(viewer); resize();
+
+  const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+  let last = performance.now(), visible = true;
+  new IntersectionObserver(e => visible = e[0].isIntersecting).observe(viewer);
+  renderer.setAnimationLoop((now) => {
+    const dt = Math.min((now-last)/1000, .05); last = now;
+    if (!visible) return;
+    t += Math.sign(goal - t) * Math.min(Math.abs(goal - t), dt*1.2);
+    const e = ease(t);
+    parts.forEach(p => p.obj.position.y = p.base + p.dy*e);
+    controls.target.set(0, 0, 70*e);
+    if (fly){
+      fly.k = Math.min(1, fly.k + dt*1.1); const f = ease(fly.k);
+      const a = fly.from.clone().normalize(), b = fly.to.clone().normalize();
+      const dir = a.lerp(b, f).normalize(), len = fly.from.length() + (fly.to.length()-fly.from.length())*f;
+      camera.position.copy(dir.multiplyScalar(len)).add(controls.target);
+      if (fly.k >= 1) fly = null;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+  });
 }
 
-function render(){
-  const d = new Date();
-  const on = new Set();
-  words(d).forEach(k => { const [r,c,l] = W[k]; for(let i=0;i<l;i++) on.add(r*11+c+i); });
-  cells.forEach((s,i) => s.classList.toggle("on", on.has(i)));
-  document.getElementById("now").textContent =
-    "Aktuelle Zeit: " + d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"});
-}
-render();
-setInterval(render, 10000);
+try { init3D(); }
+catch(err){ document.getElementById("loading").textContent = "3D wird von diesem Gerät nicht unterstützt."; }
+
+update();
 </script>
 </body>
 </html>
