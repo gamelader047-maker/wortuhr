@@ -1,0 +1,2 @@
+osifont (osifont-lgpl3fe) – GNU LGPL v3 mit Font-Ausnahme
+Quelle: https://github.com/hikikomori82/osifont
